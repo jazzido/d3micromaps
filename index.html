@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  #controls {
+    width: 90%;
+    margin: 0 auto;
+  }
+  #container {
+    width: 90%;
+    margin: 0 auto;
+    margin-top: 30px;
+    height: 100%;
+    position: relative;
+  }
+  #partidos {
+    position: relative;
+    width: 100%;
+  }
+  #partidos div {
+    font-size: 14px;
+    height: 30px;
+    line-height: 30px;
+    vertical-align: middle;
+    padding-left: 5px;
+  }
+
+    #partidos div:hover {
+      background-color: #e5e5e5 !important;
+      cursor: pointer;
+    }
+
+    #partidos div:nth-child(5n+1),
+    #partidos div:nth-child(5n+2),
+    #partidos div:nth-child(5n+3),
+    #partidos div:nth-child(5n+4),
+    #partidos div:nth-child(5n+5) {
+      background-color: #eee;
+    }
+
+    #partidos div:nth-child(10n+1),
+    #partidos div:nth-child(10n+2),
+    #partidos div:nth-child(10n+3),
+    #partidos div:nth-child(10n+4),
+    #partidos div:nth-child(10n+5) {
+      background-color: white;
+  }
+
+  span {
+    position: absolute;
+    top: -20px;
+    font-size: 12px;
+  }
+  #extent-min {
+    left: 240px;
+  }
+  #extent-max {
+    left: 540px;
+  }
+  svg { pointer-events: none;}
+  svg#points {
+    position: absolute;
+    top: 0px;
+    left: 250px;
+    border-left: 1px solid #444;
+    border-right: 1px solid #444;
+  }
+  svg.map { position: absolute; }
+  svg.map#clonethis { visibility: hidden; }
+  svg.map path { fill: white; stroke: #333; stroke-width: 0.05px;}
+  svg.map path.invisible { opacity: 0; }
+
+</style>
+<body>
+  <div id="controls">
+    <label for="variable">Provincia:</label>
+    <select id="provincia" name="provincia">
+      <option value="BUENOS AIRES">Buenos Aires</option>
+      <option value="CATAMARCA">Catamarca</option>
+      <option value="CHACO">Chaco</option>
+      <option value="CHUBUT">Chubut</option>
+      <option value="CORRIENTES">Corrientes</option>
+      <option value="CORDOBA">Córdoba</option>
+      <option value="ENTRE RIOS">Entre Ríos</option>
+      <option value="FORMOSA">Formosa</option>
+      <option value="JUJUY">Jujuy</option>
+      <option value="LA PAMPA">La Pampa</option>
+      <option value="LA RIOJA">La Rioja</option>
+      <option value="MENDOZA">Mendoza</option>
+      <option value="MISIONES">Misiones</option>
+      <option value="NEUQUEN">Neuquén</option>
+      <option value="RIO NEGRO">Río Negro</option>
+      <option value="SALTA">Salta</option>
+      <option value="SAN JUAN">San Juan</option>
+      <option value="SAN LUIS">San Luis</option>
+      <option value="SANTA CRUZ">Santa Cruz</option>
+      <option value="SANTA FE">Santa Fe</option>
+      <option value="SANTIAGO DEL ESTERO">Santiago del Estero</option>
+      <option value="TIERRA DEL FUEGO">Tierra del Fuego</option>
+      <option value="TUCUMAN">Tucumán</option>
+    </select>
+    <label for="variable">Variable:</label>
+    <select id="variable" name="variable">
+      <option value="Poblacion_Varones_2010">Poblacion_Varones_2010</option>
+      <option value="Poblacion_Mujeres_2010">Poblacion_Mujeres_2010</option>
+      <option value="Poblacion_Mayor10_2010">Poblacion_Mayor10_2010</option>
+      <option value="Poblacion_Analfabetos_2010">Poblacion_Analfabetos_2010</option>
+      <option value="Poblacion_Alfabetos_2010">Poblacion_Alfabetos_2010</option>
+      <option value="Poblacion_0a14_2010">Poblacion_0a14_2010</option>
+      <option value="Poblacion_15a64_2010">Poblacion_15a64_2010</option>
+      <option value="Poblacion_65ymas_2010">Poblacion_65ymas_2010</option>
+      <option value="Poblacion_Nacida_Extranjero_2010">Poblacion_Nacida_Extranjero_2010</option>
+      <option value="Poblacion_Nacida_Argentina_2010">Poblacion_Nacida_Argentina_2010</option>
+    </select>
+
+  </div>
+  <div id="container">
+    <span id="extent-min"></span>
+    <span id="extent-max"></span>
+
+    <div id="partidos">
+    </div>
+  </div>
+  <script src="http://d3js.org/topojson.v1.min.js"></script>
+  <script src="http://d3js.org/queue.v1.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script>
+var svg, censoData;
+var pointsMargin = 10, pointsWidth = 300;
+var rowHeight = 30, rowsPerGroup = 5;
+var sourceMap;
+var mapHeight = rowHeight * 5, mapWidth = 200;
+var mapProjection = d3.geo.mercator()
+    .scale(120)
+    .center([-65,-38])
+    .translate([mapWidth / 2, mapHeight / 2]);
+var mapPath = d3.geo.path().projection(mapProjection);
+var mapProvinces;
+var selectedProvince, provinceData;
+var colors = d3.scale.category10().range();
+var transitionDuration = 500;
+
+var to_id = function(str) {
+    return str.replace(/\s+/g, '-').replace('.', '').toLowerCase();
+};
+
+var toFixed = function(value, precision) {
+    var precision = precision || 0,
+    neg = value < 0,
+    power = Math.pow(10, precision),
+    value = Math.round(value * power),
+    integral = String((neg ? Math.ceil : Math.floor)(value / power)),
+    fraction = String((neg ? -value : value) % power),
+    padding = new Array(Math.max(precision - fraction.length, 0) + 1).join('0');
+
+    return precision ? integral + '.' +  padding + fraction : integral;
+}
+
+var buildDataTable = function(data) {
+    provinceData = data;
+    d3.selectAll('#partidos div').remove();
+    d3.select('#partidos')
+        .selectAll('div')
+        .data(data)
+        .enter()
+        .append('div');
+
+    d3.selectAll('svg#points circle').remove();
+    d3.select('svg#points')
+        .attr('height', data.length * rowHeight)
+        .selectAll('circle')
+        .data(data)
+        .enter()
+        .append('circle')
+        .attr('cx', pointsWidth / 2)
+        .attr('cy', function(d, i) {
+            return i*rowHeight + rowHeight / 2;
+        })
+        .attr('r', 5)
+        .attr('fill', function(d, i) { return colors[i % rowsPerGroup]; });
+    svg.select('#average-line').remove();
+    svg.append('line')
+        .attr('x1', pointsWidth/2)
+        .attr('y1', 0)
+        .attr('x2', pointsWidth/2)
+        .attr('y2', provinceData.length * rowHeight)
+        .attr('stroke-dasharray', '5,5')
+        .attr('stroke', '#777')
+        .attr('stroke-width', 1)
+        .attr('id', 'average-line');
+
+    // delete micromaps
+    d3.selectAll('#partidos svg.map').remove();
+    // zoom sourceMap to selected province
+    zoomToProvince(sourceMap, selectedProvince);
+    // add micromaps (by cloning sourceMap)
+    for (i = 0; i < data.length / rowsPerGroup; i++) {
+        var c = d3.select('svg#clonethis').node().cloneNode(true);
+        c.style.top = i * mapHeight + 'px';
+        c.style.left = '550px';
+        c.style.visibility = 'visible';
+        d3.select('#partidos').node().appendChild(c);
+        d3.select(c);
+
+    }
+
+};
+
+var populationRatio = function(d, name) {
+    return +d[name] / +d['Poblacion_Total_2010'];
+};
+
+var plotVariable = function(variable) {
+
+    var ext = d3.extent(provinceData,
+                        function(d) {
+                            return populationRatio(d, variable);
+                        });
+
+    var scalex = d3.scale.linear()
+        .domain(ext)
+        .range([pointsMargin, pointsWidth - pointsMargin])
+        .nice();
+
+    var mean = d3.mean(provinceData, function(d) {
+        return populationRatio(d, variable);
+    });
+
+    d3.select('#extent-min').html(toFixed(scalex.invert(0) * 100, 2) + '%');
+    d3.select('#extent-max').html(toFixed(scalex.invert(pointsWidth) * 100, 2) + '%');
+    svg.select('#average-line')
+        .transition()
+        .duration(transitionDuration)
+        .attr('x1', scalex(mean))
+        .attr('x2', scalex(mean));
+
+    var sorted = provinceData.sort(function(a,b) {
+        return +populationRatio(b,variable) - +populationRatio(a,variable);
+    });
+
+    d3.selectAll('#partidos div')
+        .data(sorted)
+        .html(function(d) { return d['Jurisdiccion Corregida']});
+
+    svg.selectAll('circle')
+       .data(sorted)
+       .transition()
+       .duration(transitionDuration)
+       .attr('cx', function(d) {
+           return scalex(populationRatio(d, variable));
+       })
+       .attr('r', 5);
+
+    d3.selectAll('#partidos .map path').style('fill', 'none');
+    for (i = 0; i < sorted.length / rowsPerGroup; i++) {
+        var m = d3.selectAll('#partidos svg.map')
+            .filter(function(d,k) {
+                return k == i;
+            });
+        for (j=0; j < rowsPerGroup; j++) {
+            var d = sorted[i*rowsPerGroup + j];
+            if (d === undefined) continue;
+            m.selectAll('path#' + d.DNE_ID)
+                .style('fill', colors[j % rowsPerGroup]);
+        }
+    }
+};
+
+var zoomToProvince = function(map, province) {
+
+    var b = mapPath.bounds(mapProvinces.features.filter(function(e) {
+        return e.properties.PROVINCIA == province;
+    })[0]);
+
+    var k = 0.95 / Math.max((b[1][0] - b[0][0]) / mapWidth, (b[1][1] - b[0][1]) / mapHeight);
+
+    map.attr('transform',
+             'translate(' + mapProjection.translate()[0] + ',' + mapProjection.translate()[1] + ')'
+             + 'scale(' + k + ')'
+             + "translate(" + -(b[1][0] + b[0][0]) / 2 + "," + -(b[1][1] + b[0][1]) / 2 + ")");
+
+    map.selectAll('path')
+        .classed('invisible',
+                 function(d) {
+                     return d.properties.p_id != to_id(province);
+                 })
+        .style('stroke-width', 1/(k*2) + 'px');;
+};
+
+var buildMap = function(topology) {
+    sourceMap = d3.select('body')
+                 .append('svg')
+                 .attr('height', mapHeight)
+                 .attr('width', mapWidth)
+                 .attr('id', 'clonethis')
+                 .attr('class', 'map')
+                 .append('g');
+
+    var dptos = topojson.feature(topology, topology.objects.departamentos);
+    mapProvinces = topojson.feature(topology, topology.objects.provincias);
+    sourceMap.selectAll('path')
+        .data(dptos.features)
+        .enter()
+        .append('path')
+        .attr('id', function(d) { return d.id; })
+        .attr('provincia', function(d) { return d.properties.p_id !== undefined ? d.properties.p_id.toUpperCase() : ''; })
+        .attr('d', mapPath);
+};
+
+d3.select('select#variable')
+    .on('change', function() {
+        var s = d3.select('select#variable').node();
+        var selectedVariable = s.options[s.selectedIndex].value;
+        console.log(selectedVariable);
+        plotVariable(selectedVariable);
+    });
+
+d3.select('select#provincia')
+    .on('change', function(e) {
+        var s = d3.select('select#provincia').node();
+        selectedProvince = s.options[s.selectedIndex].value;
+        buildDataTable(censoData.filter(function(e) {
+            return e['Provincia'].toUpperCase() == selectedProvince;
+        }));
+        d3.select('select#variable').on('change')();
+    });
+
+var ready = function(error, data, argentina) {
+    censoData = data;
+    buildMap(argentina);
+
+    svg = d3.select('#container')
+        .append('svg')
+        .attr('width', pointsWidth)
+        .attr('id', 'points');
+
+    d3.select('select#provincia').on('change')();
+    d3.select('select#variable').on('change')();
+};
+
+queue()
+    .defer(d3.csv, 'lanacion-censo.csv')
+    .defer(d3.json, 'argentina.json')
+    .await(ready);
+</script>
+</body>
