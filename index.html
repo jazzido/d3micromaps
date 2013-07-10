@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<head>
+  <title>d3.micromaps</title>
 <style>
   body {
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -7,6 +9,15 @@
   #controls {
     width: 90%;
     margin: 0 auto;
+    position: relative;
+    line-height: 20px;
+  }
+
+  div.vcard {
+    float: right;
+    margin-left:auto;
+    margin-right:0px;
+    font-size: 12px;
   }
   #container {
     width: 90%;
@@ -28,7 +39,7 @@
   }
 
     #partidos div:hover {
-      background-color: #e5e5e5 !important;
+      background-color: #f5f5f5 !important;
       cursor: pointer;
     }
 
@@ -48,7 +59,7 @@
       background-color: white;
   }
 
-  span {
+  #container span {
     position: absolute;
     top: -20px;
     font-size: 12px;
@@ -73,6 +84,7 @@
   svg.map path.invisible { opacity: 0; }
 
 </style>
+</head>
 <body>
   <div id="controls">
     <label for="variable">Provincia:</label>
@@ -103,18 +115,24 @@
     </select>
     <label for="variable">Variable:</label>
     <select id="variable" name="variable">
-      <option value="Poblacion_Varones_2010">Poblacion_Varones_2010</option>
-      <option value="Poblacion_Mujeres_2010">Poblacion_Mujeres_2010</option>
-      <option value="Poblacion_Mayor10_2010">Poblacion_Mayor10_2010</option>
-      <option value="Poblacion_Analfabetos_2010">Poblacion_Analfabetos_2010</option>
-      <option value="Poblacion_Alfabetos_2010">Poblacion_Alfabetos_2010</option>
-      <option value="Poblacion_0a14_2010">Poblacion_0a14_2010</option>
-      <option value="Poblacion_15a64_2010">Poblacion_15a64_2010</option>
-      <option value="Poblacion_65ymas_2010">Poblacion_65ymas_2010</option>
-      <option value="Poblacion_Nacida_Extranjero_2010">Poblacion_Nacida_Extranjero_2010</option>
-      <option value="Poblacion_Nacida_Argentina_2010">Poblacion_Nacida_Argentina_2010</option>
+      <option value="Poblacion_Varones_2010">% Poblacion Varones (2010)</option>
+      <option value="Poblacion_Mujeres_2010">% Poblacion Mujeres (2010)</option>
+      <option value="Poblacion_Mayor10_2010">% Población Mayor a 10 años (2010)</option>
+      <option value="Poblacion_Analfabetos_2010">% Población Analfabetos (2010)</option>
+      <option value="Poblacion_Alfabetos_2010">% Población Alfabetos (2010)</option>
+      <option value="Poblacion_0a14_2010">% Población de 0 a 14 años (2010)</option>
+      <option value="Poblacion_15a64_2010">% Población 15 a 64 años (2010)</option>
+      <option value="Poblacion_65ymas_2010">% Población 65 o más (2010)</option>
+      <option value="Poblacion_Nacida_Extranjero_2010">% Población Nacida en el Extranjero (2010)</option>
+      <option value="Poblacion_Nacida_Argentina_2010">% Población Nacida en Argentina (2010)</option>
     </select>
-
+    <div class="vcard">
+      <strong><a href="http://github.com/jazzido/d3micromaps">d3.micromaps</a></strong> — <a href="http://github.com/jazzido/d3micromaps">Code</a> under MIT License — Copyright © 2013
+      <a class="url fn n" href="http://jazzido.com/">
+        <span class="given-name">Manuel</span>
+        <span class="family-name">Aristarán</span>
+      </a>
+    </div>
   </div>
   <div id="container">
     <span id="extent-min"></span>
