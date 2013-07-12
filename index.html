@@ -150,9 +150,8 @@ var pointsMargin = 10, pointsWidth = 300;
 var rowHeight = 30, rowsPerGroup = 5;
 var sourceMap;
 var mapHeight = rowHeight * 5, mapWidth = 200;
-var mapProjection = d3.geo.mercator()
-    .scale(120)
-    .center([-65,-38])
+var mapProjection = d3.geo.transverseMercator()
+    .rotate([62,0])
     .translate([mapWidth / 2, mapHeight / 2]);
 var mapPath = d3.geo.path().projection(mapProjection);
 var mapProvinces;
