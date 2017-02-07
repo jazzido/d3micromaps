@@ -5,4 +5,6 @@ A prototype implementation of [Linked Micromap Plots](http://mason.gmu.edu/~dcar
 
 __[Demo](http://bl.ocks.org/jazzido/raw/5962277/)__
 
+Also see [Indicadores Educativos](http://blog.jazzido.com/indicadoresEducativosAR), based on this work.
+
 Copyright (C) 2013 [Manuel Aristarán](http://jazzido.com) — Released under the MIT License
